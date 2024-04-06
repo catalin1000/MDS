@@ -13,7 +13,7 @@ class AplicatieBugetare(ctk.CTk):
         self.chart_frame.pack(padx=20, pady=20)
 
         # Single entry field for user input
-        self.input_field = ctk.CTkEntry(self, width=100, placeholder_text="bar {number} {value}")
+        self.input_field = ctk.CTkEntry(self, width=500, placeholder_text="bar {number} {value}")
         self.input_field.pack()
 
         # Update button with new text
