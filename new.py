@@ -1,26 +1,40 @@
 import customtkinter as ctk
 
 
-class BarChartApp(ctk.CTk):
+class AplicatieBugetare(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("Bar Chart App")
+        self.title("Aplicatie de budgetare")
         self.geometry("600x400")
 
         # Create a frame to hold the chart
         self.chart_frame = ctk.CTkFrame(self, width=400, height=300)
         self.chart_frame.pack(padx=20, pady=20)
 
-         # Single entry field for user input
-        self.input_field = ctk.CTkEntry(self, width=500, placeholder_text="bar {number} {value}")
+        # Single entry field for user input
+        self.input_field = ctk.CTkEntry(self, width=100, placeholder_text="bar {number} {value}")
         self.input_field.pack()
 
         # Update button with new text
         self.update_button = ctk.CTkButton(self, text="Update Bar", command=self.update_data)
         self.update_button.pack(pady=10)
 
-        # Initial data (replace with empty list if no default values)
+        # Label for error messages (initially hidden)
+        self.error_label = ctk.CTkLabel(
+            self, text="", text_color="red", font=("Arial", 12)
+        )
+        self.error_label.pack(padx=20, pady=5)
+
+        # Ensure the label is packed initially (might be necessary in older versions)
+        try:
+            self.error_label.pack()  # Attempt to pack for visibility control
+        except (AttributeError, ctk.TclError):  # Handle potential packing errors (older versions)
+            pass
+
+        self.error_label.pack_forget()
+
+        # Initial data 
         self.data = [1, 2, 3, 5]
 
         self.draw_bars()
@@ -28,7 +42,7 @@ class BarChartApp(ctk.CTk):
     def update_data(self):
         user_input = self.input_field.get().strip()
 
-        # Split input into parts (handle empty input gracefully)
+        
         try:
             parts = user_input.split(" ")
             if len(parts) != 3:
@@ -51,14 +65,24 @@ class BarChartApp(ctk.CTk):
         # Clear and redraw the chart
         self.draw_bars()
 
-    #display error messages 
     def show_error(self, message):
-        # Display the error message in red text
+        # Display the error message
         self.error_label.configure(text=message)
-        self.error_label.show()  
+
+        # Make the label visible (show or pack depending on version)
+        try:
+            self.error_label.show()  # Use show if available (newer versions)
+        except AttributeError:
+            self.error_label.pack() # Fallback to pack for older versions
+
+        # Optionally, hide the error message after a short delay
+        self.after(2000, self.hide_error)  # Hide after 2 seconds
+
+    def hide_error(self):
+        self.error_label.configure(text="")
 
         
-        self.after(2000, self.hide_error)  # Hide after 2 seconds
+        self.error_label.pack_forget() # delete text
 
     def draw_bars(self):
         # Get the canvas within the frame
@@ -81,18 +105,20 @@ class BarChartApp(ctk.CTk):
             bar_height = (value / max_value) * 200  # Scale height based on max value
             y = 300 - bar_height
 
+            # Create the rectangle for the bar
             canvas.create_rectangle(
                 x, y, x + bar_width, 300, fill=bar_colors[i], outline="black"
             )
 
-            # Add text label above the bar
-            canvas.create_text(
-                x + bar_width // 2, y - 10, text=str(value), font=("Arial", 12) 
-            )
+            # Draw the value text above the bar (optional)
+            # canvas.create_text(
+            #     x + bar_width // 2, y - 10, text=str(value), font=("Arial", 12)
+            # )
 
             x += bar_width + bar_spacing
 
+        
 
-# Create the application instance
-app = BarChartApp()
+# Run the application
+app = AplicatieBugetare()
 app.mainloop()
