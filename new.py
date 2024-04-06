@@ -12,21 +12,12 @@ class BarChartApp(ctk.CTk):
         self.chart_frame = ctk.CTkFrame(self, width=400, height=300)
         self.chart_frame.pack(padx=20, pady=20)
 
-        # Input field labels
-        self.input_labels = ["Bar 1:", "Bar 2:", "Bar 3:", "Bar 4:"]
+         # Single entry field for user input
+        self.input_field = ctk.CTkEntry(self, width=500, placeholder_text="bar {number} {value}")
+        self.input_field.pack()
 
-        # Entry widgets to store user input
-        self.data_entries = []
-        for label_text in self.input_labels:
-            label = ctk.CTkLabel(self, text=label_text)
-            label.pack()
-
-            entry = ctk.CTkEntry(self, width=50)
-            entry.pack()
-            self.data_entries.append(entry)
-
-        # Button to trigger data update
-        self.update_button = ctk.CTkButton(self, text="Update Chart", command=self.update_data)
+        # Update button with new text
+        self.update_button = ctk.CTkButton(self, text="Update Bar", command=self.update_data)
         self.update_button.pack(pady=10)
 
         # Initial data (replace with empty list if no default values)
@@ -35,24 +26,39 @@ class BarChartApp(ctk.CTk):
         self.draw_bars()
 
     def update_data(self):
-        # Get user input from entry widgets
-        user_data = []
-        for entry in self.data_entries:
-            try:
-                value = int(entry.get())
-                user_data.append(value)
-            except ValueError:
-                # Handle empty input: use previous value or default value (0 here)
-                if len(user_data) > 0:
-                    user_data.append(user_data[-1])
-                else:
-                    user_data.append(0)
+        user_input = self.input_field.get().strip()
 
-        # Update data with user input or previous values
-        self.data = [user_data[i] if i < len(user_data) else self.data[i - 1] for i in range(len(self.input_labels))]
+        # Split input into parts (handle empty input gracefully)
+        try:
+            parts = user_input.split(" ")
+            if len(parts) != 3:
+                raise ValueError
+            bar_number = int(parts[1]) - 1  # Adjust for 0-based indexing
+            value = int(parts[2])
+        except ValueError:
+            # Handle invalid input format or numbers
+            self.show_error("Invalid input format! Use: bar {number} {value}")
+            return
+
+        # Check for valid bar number within data list
+        if bar_number < 0 or bar_number >= len(self.data):
+            self.show_error("Invalid bar number! Please enter a number between 1 and {}".format(len(self.data)))
+            return
+
+        # Update the data list
+        self.data[bar_number] = value
 
         # Clear and redraw the chart
         self.draw_bars()
+
+    #display error messages 
+    def show_error(self, message):
+        # Display the error message in red text
+        self.error_label.configure(text=message)
+        self.error_label.show()  
+
+        
+        self.after(2000, self.hide_error)  # Hide after 2 seconds
 
     def draw_bars(self):
         # Get the canvas within the frame
@@ -81,7 +87,7 @@ class BarChartApp(ctk.CTk):
 
             # Add text label above the bar
             canvas.create_text(
-                x + bar_width // 2, y - 10, text=str(value), font=("Arial", 12)
+                x + bar_width // 2, y - 10, text=str(value), font=("Arial", 12) 
             )
 
             x += bar_width + bar_spacing
