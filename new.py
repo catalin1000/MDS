@@ -5,7 +5,7 @@ class BudgetApplication(ctk.CTk):
         super().__init__()
 
         self.title("Budget Application")
-        self.geometry("1000x1000")
+        self.geometry("600x400")
 
         self.theme = "dark"  # Set default theme to dark
 
@@ -21,7 +21,7 @@ class BudgetApplication(ctk.CTk):
         self.chart_frame.pack(padx=20, pady=20)
 
         # Single entry field for user input
-        self.input_field = ctk.CTkEntry(self, width=500, placeholder_text="bar {number} {value}")
+        self.input_field = ctk.CTkEntry(self, width=100, placeholder_text="bar {number} {value}")
         self.input_field.pack()
 
         # Update button with new text
@@ -76,18 +76,17 @@ class BudgetApplication(ctk.CTk):
         # Display the error message
         self.error_label.configure(text=message)
 
-        # Make the label visible (show or pack depending on version)
+        # Make the label visible
         try:
-            self.error_label.show()  # Use show if available (newer versions)
+            self.error_label.show()
         except AttributeError:
-            self.error_label.pack()  # Fallback to pack for older versions
+            self.error_label.pack()
 
-        # Optionally, hide the error message after a short delay
+        # hide the error message after a short delay
         self.after(2000, self.hide_error)  # Hide after 2 seconds
 
     def hide_error(self):
         self.error_label.configure(text="")
-
         self.error_label.pack_forget()  # delete text
 
     def draw_bars(self):
