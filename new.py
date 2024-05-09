@@ -3,7 +3,7 @@ import customtkinter as ctk
 class BudgetApplication(ctk.CTk):
     def __init__(self):
         super().__init__()
-
+        self.total_bars = 1  # Initialize with default value to avoid division by zero
         self.title("Budget Application")
         self.geometry("600x400")
 
@@ -104,11 +104,30 @@ class BudgetApplication(ctk.CTk):
         # Clear any existing elements
         canvas.delete("all")
 
-        # Define bar width and spacing
-        bar_width = 50
-        bar_spacing = 20
+        # Frame width for calculating available space
+        frame_width = self.chart_frame.winfo_width()
 
-        # Calculate starting position for the first bar
+        # Define bar spacing and outline width
+        bar_spacing = 20  # Adjust this value to control spacing between bars
+        outline_width = 2  # Assuming outline width on both sides (adjust if needed)
+
+        # Calculate margins
+        margins = 2 * bar_spacing
+
+        # Calculate available width for bars (considering new spacing)
+        available_width = frame_width - margins
+
+        # Calculate total outline width for all bars
+        total_outline_width = self.total_bars * outline_width
+
+        # Minimum bar width (optional)
+        min_bar_width = 10  # Adjust as needed
+
+        # Calculate bar width considering spacing, outline, and minimum width
+        bar_width = max(min_bar_width,
+                        (available_width - (self.total_bars - 1) * bar_spacing - total_outline_width) / self.total_bars)
+
+        # Starting position for the first bar
         x = bar_spacing
 
         # Background color for canvas
@@ -117,17 +136,24 @@ class BudgetApplication(ctk.CTk):
         # Set canvas background color
         canvas.config(bg=canvas_bg_color)
 
-        # Draw each bar with its corresponding color and height
-        bar_colors = ["#2ecc71", "#3498db", "#9b59b6", "#f1c40f"] if self.theme == "light" else ["#34495e", "#2c3e50", "#95a5a6", "#bdc3c7"]
+        # Determine the maximum value in the data list
+        max_value = max(self.data)
 
+        # Draw each bar with its corresponding color and height
         for i, value in enumerate(self.data):
-            max_value = max(self.data)
             bar_height = (value / max_value) * 200  # Scale height based on max value
             y = 300 - bar_height
 
+            # Define the color for the bar based on the theme
+            bar_colors = ["#2ecc71", "#3498db", "#9b59b6", "#f1c40f"] if self.theme == "light" else ["#34495e",
+                                                                                                     "#2c3e50",
+                                                                                                     "#95a5a6",
+                                                                                                     "#bdc3c7"]
+            fill_color = bar_colors[i % len(bar_colors)]
+
             # Create the rectangle for the bar
             canvas.create_rectangle(
-                x, y, x + bar_width, 300, fill=bar_colors[i], outline="black"
+                x, y, x + bar_width, 300, fill=fill_color, outline="black"
             )
 
             x += bar_width + bar_spacing
@@ -163,11 +189,15 @@ class BudgetApplication(ctk.CTk):
             self.show_error("Invalid duration! Please enter a positive integer.")
             return
 
-        # Update the budget duration
-        self.free_tier_duration = duration
+        # Update remaining days and calculate total bars based on duration
         self.remaining_days = duration
+        self.total_bars = duration  # Nu este nevoie să mai apelați max(1, duration), deoarece se folosește totalul duratei pentru numărul de bare
 
-        self.show_error(f"Budget duration set to {duration} days.")
+        # Reset data to create 'total_bars' bars with value 0
+        self.data = [1] * self.total_bars  # Create a list of 'total_bars' zeros
+        self.draw_bars()
+
+        self.show_error(f"Budget set for {duration} days. {self.total_bars} bars displayed.")
 
     def reset_data(self):
         self.data = []  # Clear existing data
