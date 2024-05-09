@@ -47,6 +47,14 @@ class BudgetApplication(ctk.CTk):
 
         self.draw_bars()
 
+        # Button to set budgeting duration
+        self.set_duration_button = ctk.CTkButton(self, text="Set Budget Duration", command=self.set_budget_duration)
+        self.set_duration_button.pack(pady=10)
+
+        # Entry field for budget duration
+        self.duration_entry = ctk.CTkEntry(self, width=100, placeholder_text="Days")
+        self.duration_entry.pack(pady=5)
+
     def update_data(self):
         user_input = self.input_field.get().strip()
 
@@ -146,6 +154,26 @@ class BudgetApplication(ctk.CTk):
         else:
             self.config(bg="#2c3e50")  # Dark background
 
+    def set_budget_duration(self):
+        try:
+            duration = int(self.duration_entry.get())
+            if duration <= 0:
+                raise ValueError
+        except ValueError:
+            self.show_error("Invalid duration! Please enter a positive integer.")
+            return
+
+        # Update the budget duration
+        self.free_tier_duration = duration
+        self.remaining_days = duration
+
+        self.show_error(f"Budget duration set to {duration} days.")
+
+    def reset_data(self):
+        self.data = []  # Clear existing data
+        self.draw_bars()
+
 # Run the application
-app = BudgetApplication()
-app.mainloop()
+if __name__ == "__main__":
+    app = BudgetApplication()
+    app.mainloop()
