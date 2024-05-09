@@ -5,7 +5,7 @@ class BudgetApplication(ctk.CTk):
         super().__init__()
         self.total_bars = 1  # Initialize with default value to avoid division by zero
         self.title("Budget Application")
-        self.geometry("600x400")
+        self.geometry("1200x400")
 
         self.theme = "dark"  # Set default theme to dark
 
@@ -17,7 +17,7 @@ class BudgetApplication(ctk.CTk):
         self.theme_button.pack(side="top", padx=20, pady=5, anchor="nw")  # Place the button in the top left corner
 
         # Create a frame to hold the chart
-        self.chart_frame = ctk.CTkFrame(self, width=400, height=300)
+        self.chart_frame = ctk.CTkFrame(self, width=1000, height=300)
         self.chart_frame.pack(padx=20, pady=20)
 
         # Single entry field for user input
