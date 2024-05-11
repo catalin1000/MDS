@@ -20,12 +20,12 @@ class BudgetApplication(ctk.CTk):
         self.chart_frame = ctk.CTkFrame(self, width=1000, height=300)
         self.chart_frame.pack(padx=20, pady=20)
 
-        # Single entry field for user input
-        self.input_field = ctk.CTkEntry(self, width=100, placeholder_text="bar {number} {value}")
+        # Entry field for user input (update for notes and bar data)
+        self.input_field = ctk.CTkEntry(self, width=100, placeholder_text="bar {number} {value} OR add {column_number} {Note}")
         self.input_field.pack()
 
         # Update button with new text
-        self.update_button = ctk.CTkButton(self, text="Update Bar", command=self.update_data)
+        self.update_button = ctk.CTkButton(self, text="Update", command=self.update_data)
         self.update_button.pack(pady=10)
 
         # Label for error messages (initially hidden)
@@ -44,6 +44,7 @@ class BudgetApplication(ctk.CTk):
 
         # Initial data
         self.data = [1, 2, 3, 5]
+        self.notes = {}  # Dictionary to store notes (column number as key, note as value)
 
         self.draw_bars()
 
@@ -57,28 +58,53 @@ class BudgetApplication(ctk.CTk):
 
     def update_data(self):
         user_input = self.input_field.get().strip()
+        parts = user_input.split(" ")
 
-        try:
-            parts = user_input.split(" ")
+        if user_input.startswith("add"):
+            # Handle note addition
             if len(parts) != 3:
-                raise ValueError
-            bar_number = int(parts[1]) - 1  # Adjust for 0-based indexing
-            value = int(parts[2])
-        except ValueError:
-            # Handle invalid input format or numbers
-            self.show_error("Invalid input format! Use: bar {number} {value}")
-            return
+                self.show_error("Invalid note format! Use: add {column_number} {Note}")
+                return
+            try:
+                column_number = int(parts[1]) - 1  # Adjust for 0-based indexing
+                note = parts[2]
+            except ValueError:
+                self.show_error("Invalid column number or note format!")
+                return
 
-        # Check for valid bar number within data list
-        if bar_number < 0 or bar_number >= len(self.data):
-            self.show_error("Invalid bar number! Please enter a number between 1 and {}".format(len(self.data)))
-            return
+            # Check for valid column number within data list
+            if column_number < 0 or column_number >= len(self.data):
+                self.show_error("Invalid column number! Please enter a number between 1 and {}".format(len(self.data)))
+                return
 
-        # Update the data list
-        self.data[bar_number] = value
+            # Add or update note for the column
+            self.notes[column_number] = note
+            self.draw_bars()
 
-        # Clear and redraw the chart
-        self.draw_bars()
+        else:
+            # Handle bar data update (unchanged from previous code)
+            
+            try:
+                parts = user_input.split(" ")
+                if len(parts) != 3:
+                    raise ValueError
+                bar_number = int(parts[1]) - 1  # Adjust for 0-based indexing
+                value = int(parts[2])
+            except ValueError:
+                # Handle invalid input format or numbers
+                self.show_error("Invalid input format! Use: bar {number} {value}")
+                return
+
+            # Check for valid bar number within data list
+            if bar_number < 0 or bar_number >= len(self.data):
+                self.show_error("Invalid bar number! Please enter a number between 1 and {}".format(len(self.data)))
+                return
+
+            # Update the data list
+            self.data[bar_number] = value
+
+            # Clear and redraw the chart
+            self.draw_bars()
 
     def show_error(self, message):
         # Display the error message
@@ -155,7 +181,16 @@ class BudgetApplication(ctk.CTk):
             canvas.create_rectangle(
                 x, y, x + bar_width, 300, fill=fill_color, outline="black"
             )
+            if i in self.notes:
+                # Get the note text
+                note_text = self.notes[i]
 
+                # Calculate text position (adjust as needed for better placement)
+                text_x = x + bar_width // 2
+                text_y = y - 10  # Adjust y-position to avoid overlapping bar
+
+                # Create a text element to display the note
+                canvas.create_text(text_x, text_y, text=note_text, anchor="center", font= ("Arial", 8) )
             x += bar_width + bar_spacing
 
     def toggle_theme(self):
