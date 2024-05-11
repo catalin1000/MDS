@@ -190,7 +190,7 @@ class BudgetApplication(ctk.CTk):
                 text_y = y - 10  # Adjust y-position to avoid overlapping bar
 
                 # Create a text element to display the note
-                canvas.create_text(text_x, text_y, text=note_text, anchor="center", font= ("Arial", 8) )
+                canvas.create_text(text_x, text_y, text=note_text, anchor="center", font= ("Arial", 8),fill='white' if self.theme =='dark' else 'black')
             x += bar_width + bar_spacing
 
     def toggle_theme(self):
