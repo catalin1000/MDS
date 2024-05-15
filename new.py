@@ -8,47 +8,46 @@ class BudgetApplication(ctk.CTk):
         self.geometry("1200x400")
 
         self.theme = "dark"  # Set default theme to dark
-
-        # Update the entire application's background according to the theme
         self.update_app_background()
 
-        # Theme toggle button with clear text and command assignment
+        # Theme toggle button
         self.theme_button = ctk.CTkButton(self, text="Night Mode", command=self.toggle_theme)
-        self.theme_button.pack(side="top", padx=20, pady=5, anchor="nw")  # Place the button in the top left corner
+        self.theme_button.pack(side="top", padx=20, pady=5, anchor="nw")
 
-        # Create a frame to hold the chart
+        # Chart frame
         self.chart_frame = ctk.CTkFrame(self, width=1000, height=300)
         self.chart_frame.pack(padx=20, pady=20)
 
-        # Entry field for user input (update for notes and bar data)
-        self.input_field = ctk.CTkEntry(self, width=100, placeholder_text="bar {number} {value} OR add {column_number} {Note}")
-        self.input_field.pack()
-
-        # Update button with new text
+        # Update button
         self.update_button = ctk.CTkButton(self, text="Update", command=self.update_data)
         self.update_button.pack(pady=10)
 
-        # Label for error messages (initially hidden)
+        # Input field
+        self.input_field = ctk.CTkEntry(self, width=100, placeholder_text="bar {number} {value} OR add {column_number} {Note}")
+        self.input_field.pack()
+
+
+        # Error label
         self.error_label = ctk.CTkLabel(
             self, text="", text_color="red", font=("Arial", 12)
         )
         self.error_label.pack(padx=20, pady=5)
-
-        # Ensure the label is packed initially
         try:
-            self.error_label.pack()  # Attempt to pack for visibility control
-        except (AttributeError, ctk.TclError):  # Handle potential packing errors
+            self.error_label.pack()
+        except (AttributeError, ctk.TclError):
             pass
-
         self.error_label.pack_forget()
 
         # Initial data
         self.data = [1, 2, 3, 5]
-        self.notes = {}  # Dictionary to store notes (column number as key, note as value)
+        self.notes = {}
+
+        # Currency flag indicating the current currency type (0 for lei, 1 for euro, 2 for dollars)
+        self.currency_flag = 0  # Default to lei
 
         self.draw_bars()
 
-        # Button to set budgeting duration
+        # Theme toggle button
         self.set_duration_button = ctk.CTkButton(self, text="Set Budget Duration", command=self.set_budget_duration)
         self.set_duration_button.pack(pady=10)
 
@@ -56,164 +55,156 @@ class BudgetApplication(ctk.CTk):
         self.duration_entry = ctk.CTkEntry(self, width=100, placeholder_text="Days")
         self.duration_entry.pack(pady=5)
 
+        # Button for currency conversion
+        self.currency_button = ctk.CTkButton(self, text="Convert", command=self.convert_currency)
+        self.currency_button.pack(pady=10)
+
+        # Entry field for currency
+        self.currency_entry = ctk.CTkEntry(self, width=100, placeholder_text="Currency (Leu, Euro, Dollar)")
+        self.currency_entry.pack(pady=10)
+
     def update_data(self):
         user_input = self.input_field.get().strip()
         parts = user_input.split(" ")
 
         if user_input.startswith("add"):
-            # Handle note addition
             if len(parts) != 3:
                 self.show_error("Invalid note format! Use: add {column_number} {Note}")
                 return
             try:
-                column_number = int(parts[1]) - 1  # Adjust for 0-based indexing
+                column_number = int(parts[1]) - 1
                 note = parts[2]
             except ValueError:
                 self.show_error("Invalid column number or note format!")
                 return
 
-            # Check for valid column number within data list
             if column_number < 0 or column_number >= len(self.data):
                 self.show_error("Invalid column number! Please enter a number between 1 and {}".format(len(self.data)))
                 return
 
-            # Add or update note for the column
             self.notes[column_number] = note
             self.draw_bars()
 
         else:
-            # Handle bar data update (unchanged from previous code)
-            
             try:
                 parts = user_input.split(" ")
                 if len(parts) != 3:
                     raise ValueError
-                bar_number = int(parts[1]) - 1  # Adjust for 0-based indexing
+                bar_number = int(parts[1]) - 1
                 value = int(parts[2])
             except ValueError:
-                # Handle invalid input format or numbers
                 self.show_error("Invalid input format! Use: bar {number} {value}")
                 return
 
-            # Check for valid bar number within data list
             if bar_number < 0 or bar_number >= len(self.data):
                 self.show_error("Invalid bar number! Please enter a number between 1 and {}".format(len(self.data)))
                 return
 
-            # Update the data list
             self.data[bar_number] = value
-
-            # Clear and redraw the chart
             self.draw_bars()
 
     def show_error(self, message):
-        # Display the error message
         self.error_label.configure(text=message)
-
-        # Make the label visible
         try:
             self.error_label.show()
         except AttributeError:
             self.error_label.pack()
-
-        # hide the error message after a short delay
-        self.after(2000, self.hide_error)  # Hide after 2 seconds
+        self.after(2000, self.hide_error)
 
     def hide_error(self):
         self.error_label.configure(text="")
-        self.error_label.pack_forget()  # delete text
+        self.error_label.pack_forget()
+
+    def convert_currency(self):
+        # Conversion rates (assuming approximate values)
+        conversion_rates = {
+            "Leu": 1,
+            "Euro": 5,  # 1 EUR ~ 5 RON (approximate)
+            "Dollar": 4.3,  # 1 USD ~ 4.3 RON (approximate)
+        }
+
+        # Get the selected currency from the input field
+        selected_currency = self.currency_entry.get().strip()
+
+
+        # Check if the selected currency is valid
+        if selected_currency not in conversion_rates:
+            self.show_error("Invalid currency selected! Please enter either 'Leu', 'Euro', or 'Dollar'.")
+            return
+
+        # Calculate the conversion factor based on the selected currency
+        conversion_factor = conversion_rates[selected_currency]
+
+        # Convert the data to the selected currency
+        self.data = [value / conversion_factor for value in self.data]
+
+
+
+        # Redraw the bars to reflect the updated data
+        self.draw_bars()
 
     def draw_bars(self):
-        # Get the canvas within the frame
         canvas = self.chart_frame._canvas
-
-        # Clear any existing elements
         canvas.delete("all")
 
-        # Frame width for calculating available space
         frame_width = self.chart_frame.winfo_width()
-
-        # Define bar spacing and outline width
-        bar_spacing = 20  # Adjust this value to control spacing between bars
-        outline_width = 2  # Assuming outline width on both sides (adjust if needed)
-
-        # Calculate margins
+        bar_spacing = 20
+        outline_width = 2
         margins = 2 * bar_spacing
-
-        # Calculate available width for bars (considering new spacing)
         available_width = frame_width - margins
-
-        # Calculate total outline width for all bars
         total_outline_width = self.total_bars * outline_width
-
-        # Minimum bar width (optional)
-        min_bar_width = 10  # Adjust as needed
-
-        # Calculate bar width considering spacing, outline, and minimum width
+        min_bar_width = 10
         bar_width = max(min_bar_width,
                         (available_width - (self.total_bars - 1) * bar_spacing - total_outline_width) / self.total_bars)
-
-        # Starting position for the first bar
         x = bar_spacing
-
-        # Background color for canvas
         canvas_bg_color = "#c0c9d1" if self.theme == "light" else "#2c3e50"
-
-        # Set canvas background color
         canvas.config(bg=canvas_bg_color)
 
-        # Determine the maximum value in the data list
-        max_value = max(self.data)
+        # Calculate the maximum value based on the selected currency
+        max_value = max(v for v in self.data)
 
-        # Draw each bar with its corresponding color and height
         for i, value in enumerate(self.data):
-            bar_height = (value / max_value) * 200  # Scale height based on max value
+            # Adjust the height of the bars based on the maximum value
+            bar_height = (value / max_value) * 200 * 0.7
             y = 300 - bar_height
 
-            # Define the color for the bar based on the theme
             bar_colors = ["#2ecc71", "#3498db", "#9b59b6", "#f1c40f"] if self.theme == "light" else ["#34495e",
                                                                                                      "#2c3e50",
                                                                                                      "#95a5a6",
                                                                                                      "#bdc3c7"]
             fill_color = bar_colors[i % len(bar_colors)]
-
-            # Create the rectangle for the bar
             canvas.create_rectangle(
                 x, y, x + bar_width, 300, fill=fill_color, outline="black"
             )
             if i in self.notes:
-                # Get the note text
                 note_text = self.notes[i]
-
-                # Calculate text position (adjust as needed for better placement)
                 text_x = x + bar_width // 2
-                text_y = y - 10  # Adjust y-position to avoid overlapping bar
+                text_y = y - 10
+                canvas.create_text(text_x, text_y, text=note_text, anchor="center", font=("Arial", 8),
+                                   fill='white' if self.theme == 'dark' else 'black')
 
-                # Create a text element to display the note
-                canvas.create_text(text_x, text_y, text=note_text, anchor="center", font= ("Arial", 8),fill='white' if self.theme =='dark' else 'black')
+            # Add text with the value of the bar
+            canvas.create_text(x + bar_width / 2, y - 20, text=str(value), fill='black')
+
             x += bar_width + bar_spacing
 
     def toggle_theme(self):
         if self.theme == "light":
             self.theme = "dark"
             self.theme_button.configure(text="Light Mode")
-            ctk.set_appearance_mode("Dark")  # Apply dark mode
+            ctk.set_appearance_mode("Dark")
         else:
             self.theme = "light"
             self.theme_button.configure(text="Night Mode")
-            ctk.set_appearance_mode("System")  # Apply light mode
-
-        # Update the entire application's background according to the theme
+            ctk.set_appearance_mode("System")
         self.update_app_background()
-
-        # Redraw the bars
         self.draw_bars()
 
     def update_app_background(self):
         if self.theme == "light":
-            self.config(bg="#c0c9d1")  # Lighter gray background
+            self.config(bg="#c0c9d1")
         else:
-            self.config(bg="#2c3e50")  # Dark background
+            self.config(bg="#2c3e50")
 
     def set_budget_duration(self):
         try:
@@ -224,21 +215,53 @@ class BudgetApplication(ctk.CTk):
             self.show_error("Invalid duration! Please enter a positive integer.")
             return
 
-        # Update remaining days and calculate total bars based on duration
         self.remaining_days = duration
-        self.total_bars = duration  # Nu este nevoie să mai apelați max(1, duration), deoarece se folosește totalul duratei pentru numărul de bare
-
-        # Reset data to create 'total_bars' bars with value 0
-        self.data = [1] * self.total_bars  # Create a list of 'total_bars' zeros
+        self.total_bars = duration
+        self.data = [1] * self.total_bars
         self.draw_bars()
-
         self.show_error(f"Budget set for {duration} days. {self.total_bars} bars displayed.")
 
-    def reset_data(self):
-        self.data = []  # Clear existing data
+    def convert_currency(self):
+        # Conversion rates (assuming approximate values)
+        conversion_rates = {
+            "Leu": 1,
+            "Euro": 5,  # 1 EUR ~ 5 RON (approximate)
+            "Dollar": 4.3,  # 1 USD ~ 4.3 RON (approximate)
+        }
+
+        # Get the selected currency from the input field
+        selected_currency = self.currency_entry.get().strip()
+
+
+        # Check if the selected currency is valid
+        if selected_currency not in conversion_rates:
+            self.show_error("Invalid currency selected! Please enter either 'Leu', 'Euro', or 'Dollar'.")
+            return
+
+        # Calculate the conversion factor based on the selected currency
+        conversion_factor = conversion_rates[selected_currency]
+
+        # Check if this is the first conversion
+        if self.currency_flag == 0:  # Lei
+            # Convert the data to the selected currency
+            self.data = [value / conversion_factor for value in self.data]
+        elif self.currency_flag == 1:  # Euro
+            # Convert the data back to Lei and then to the selected currency
+            self.data = [value * conversion_rates["Euro"] / conversion_factor for value in self.data]
+        else:  # Dollar
+            # Convert the data back to Lei and then to the selected currency
+            self.data = [value * conversion_rates["Dollar"] / conversion_factor for value in self.data]
+
+        # Set the new currency flag
+        if selected_currency == "Leu":
+            self.currency_flag = 0
+        elif selected_currency == "Euro":
+            self.currency_flag = 1
+        else:
+            self.currency_flag = 2
         self.draw_bars()
 
-# Run the application
+
 if __name__ == "__main__":
     app = BudgetApplication()
     app.mainloop()
