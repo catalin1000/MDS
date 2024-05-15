@@ -184,7 +184,7 @@ class BudgetApplication(ctk.CTk):
                                    fill='white' if self.theme == 'dark' else 'black')
 
             # Add text with the value of the bar
-            canvas.create_text(x + bar_width / 2, y - 20, text=str(value), fill='black')
+            canvas.create_text(x + bar_width / 2, y - 25, text=str(round(value,2)), fill='white' if self.theme == 'dark' else 'black')
 
             x += bar_width + bar_spacing
 
