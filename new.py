@@ -1,4 +1,6 @@
 import customtkinter as ctk
+import matplotlib.pyplot as plt
+import numpy as np
 
 class BudgetApplication(ctk.CTk):
     def __init__(self):
@@ -6,7 +8,7 @@ class BudgetApplication(ctk.CTk):
         self.total_bars = 1  # Initialize with default value to avoid division by zero
         self.title("Budget Application")
         self.geometry("1200x400")
-
+        self.trend_data = None
         self.theme = "dark"  # Set default theme to dark
         self.update_app_background()
 
@@ -62,6 +64,7 @@ class BudgetApplication(ctk.CTk):
         # Entry field for currency
         self.currency_entry = ctk.CTkEntry(self, width=100, placeholder_text="Currency (Leu, Euro, Dollar)")
         self.currency_entry.pack(pady=10)
+        
 
     def update_data(self):
         user_input = self.input_field.get().strip()
@@ -85,7 +88,7 @@ class BudgetApplication(ctk.CTk):
             self.notes[column_number] = note
             self.draw_bars()
 
-        else:
+        elif user_input.startswith("bar"):
             try:
                 parts = user_input.split(" ")
                 if len(parts) != 3:
@@ -102,7 +105,19 @@ class BudgetApplication(ctk.CTk):
 
             self.data[bar_number] = value
             self.draw_bars()
-
+        elif user_input.startswith("graph"):
+            if len(parts) != 3:
+                self.show_error("Invalid graph command format! Use: graph {first_day} {last_day}")
+                return
+            try:
+                first_day = int(parts[1])
+                last_day = int(parts[2])
+            except ValueError:
+                self.show_error("Invalid date range! Please enter integers for days.")
+                return
+            self.graph(first_day, last_day)
+        else:
+            self.show_error("Invalid input format!")
     def show_error(self, message):
         self.error_label.configure(text=message)
         try:
@@ -144,6 +159,7 @@ class BudgetApplication(ctk.CTk):
         self.draw_bars()
 
     def draw_bars(self):
+        x = np.linspace(1, self.total_bars, self.total_bars)
         canvas = self.chart_frame._canvas
         canvas.delete("all")
 
@@ -187,7 +203,9 @@ class BudgetApplication(ctk.CTk):
             canvas.create_text(x + bar_width / 2, y - 25, text=str(round(value,2)), fill='white' if self.theme == 'dark' else 'black')
 
             x += bar_width + bar_spacing
-
+        if self.trend_data is not None:
+            # Plot the trend line on top of the bars
+            plt.plot(x, self.trend_data, color="red", linestyle="-")
     def toggle_theme(self):
         if self.theme == "light":
             self.theme = "dark"
@@ -260,7 +278,43 @@ class BudgetApplication(ctk.CTk):
         else:
             self.currency_flag = 2
         self.draw_bars()
+    def graph(self, first_day, last_day):
+        # Validate input for first_day and last_day
+        try:
+            first_day = int(first_day)
+            last_day = int(last_day)
+            if first_day < 1 or last_day > self.total_bars or first_day > last_day:
+                raise ValueError
+        except ValueError:
+            self.show_error("Invalid date range! Please enter days between 1 and {}".format(self.total_bars))
+            return
 
+        # Extract data for the specified date range
+        data_to_plot = self.data[first_day - 1:last_day]
+        x = np.arange(first_day, last_day + 1)
+
+        # Calculate the trend line (linear regression)
+        m, c = np.polyfit(x, data_to_plot, 1)
+        trend_line = m * x + c
+
+        # Store the trend line data
+        self.trend_data = trend_line
+
+        # Create a new figure for the trend line
+        plt.figure(figsize=(5, 3))
+        plt.plot(x, data_to_plot, 'o', label='Budget History')
+        plt.plot(x, trend_line, color='red', linestyle='-', label='Trend Line')
+        plt.xlabel('Days')
+        plt.ylabel('Budget')
+        plt.title(f'Budget Trend (Days {first_day} - {last_day})')
+        plt.legend()
+        plt.grid(True)
+
+        # Show the trend line plot
+        plt.show()
+
+        # Clear the trend line data after displaying the plot
+        self.trend_data = None
 
 if __name__ == "__main__":
     app = BudgetApplication()
