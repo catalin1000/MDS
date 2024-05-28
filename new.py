@@ -2,6 +2,7 @@ import customtkinter as ctk
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 class BudgetApplication(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -20,19 +21,25 @@ class BudgetApplication(ctk.CTk):
         self.chart_frame = ctk.CTkFrame(self, width=1000, height=300)
         self.chart_frame.pack(padx=20, pady=20)
 
-        # Update button
-        self.update_button = ctk.CTkButton(self, text="Update", command=self.update_data)
+        # Update bar button
+        self.update_button = ctk.CTkButton(self, text="Update Bar", command=self.update_data)
         self.update_button.pack(pady=10)
 
         # Input field
-        self.input_field = ctk.CTkEntry(self, width=100, placeholder_text="bar {number} {value} OR add {column_number} {Note}")
+        self.input_field = ctk.CTkEntry(self, width=100,
+                                        placeholder_text="bar {number} {value} OR add {column_number} {Note}")
         self.input_field.pack()
 
+        # Costs update button
+        self.costs_button = ctk.CTkButton(self, text="Update Costs", command=self.update_costs)
+        self.costs_button.pack(pady=10)
+
+        # Costs input field
+        self.costs_entry = ctk.CTkEntry(self, width=100, placeholder_text="cost {number} {value}")
+        self.costs_entry.pack(pady=5)
 
         # Error label
-        self.error_label = ctk.CTkLabel(
-            self, text="", text_color="red", font=("Arial", 12)
-        )
+        self.error_label = ctk.CTkLabel(self, text="", text_color="red", font=("Arial", 12))
         self.error_label.pack(padx=20, pady=5)
         try:
             self.error_label.pack()
@@ -43,6 +50,7 @@ class BudgetApplication(ctk.CTk):
         # Initial data
         self.data = [1, 2, 3, 5]
         self.notes = {}
+        self.costs = [0] * len(self.data)
 
         # Currency flag indicating the current currency type (0 for lei, 1 for euro, 2 for dollars)
         self.currency_flag = 0  # Default to lei
@@ -64,7 +72,6 @@ class BudgetApplication(ctk.CTk):
         # Entry field for currency
         self.currency_entry = ctk.CTkEntry(self, width=100, placeholder_text="Currency (Leu, Euro, Dollar)")
         self.currency_entry.pack(pady=10)
-        
 
     def update_data(self):
         user_input = self.input_field.get().strip()
@@ -118,6 +125,29 @@ class BudgetApplication(ctk.CTk):
             self.graph(first_day, last_day)
         else:
             self.show_error("Invalid input format!")
+
+    def update_costs(self):
+        user_input = self.costs_entry.get().strip()
+        parts = user_input.split(" ")
+
+        if not user_input.startswith("cost") or len(parts) != 3:
+            self.show_error("Invalid input format! Use: cost {number} {value}")
+            return
+
+        try:
+            bar_number = int(parts[1]) - 1
+            value = float(parts[2])
+        except ValueError:
+            self.show_error("Invalid input format! Use: cost {number} {value}")
+            return
+
+        if bar_number < 0 or bar_number >= len(self.data):
+            self.show_error("Invalid bar number! Please enter a number between 1 and {}".format(len(self.data)))
+            return
+
+        self.costs[bar_number] = value
+        self.draw_bars()
+
     def show_error(self, message):
         self.error_label.configure(text=message)
         try:
@@ -141,7 +171,6 @@ class BudgetApplication(ctk.CTk):
         # Get the selected currency from the input field
         selected_currency = self.currency_entry.get().strip()
 
-
         # Check if the selected currency is valid
         if selected_currency not in conversion_rates:
             self.show_error("Invalid currency selected! Please enter either 'Leu', 'Euro', or 'Dollar'.")
@@ -153,7 +182,8 @@ class BudgetApplication(ctk.CTk):
         # Convert the data to the selected currency
         self.data = [value / conversion_factor for value in self.data]
 
-
+        # Convert the costs to the selected currency
+        self.costs = [cost / conversion_factor for cost in self.costs]
 
         # Redraw the bars to reflect the updated data
         self.draw_bars()
@@ -200,12 +230,18 @@ class BudgetApplication(ctk.CTk):
                                    fill='white' if self.theme == 'dark' else 'black')
 
             # Add text with the value of the bar
-            canvas.create_text(x + bar_width / 2, y - 25, text=str(round(value,2)), fill='white' if self.theme == 'dark' else 'black')
+            canvas.create_text(x + bar_width / 2, y - 25, text=str(round(value, 2)),
+                               fill='white' if self.theme == 'dark' else 'black')
+
+            # Add text with the cost of the bar
+            canvas.create_text(x + bar_width / 2, 310, text=str(round(self.costs[i], 2)),
+                               fill='white' if self.theme == 'dark' else 'black')
 
             x += bar_width + bar_spacing
         if self.trend_data is not None:
             # Plot the trend line on top of the bars
             plt.plot(x, self.trend_data, color="red", linestyle="-")
+
     def toggle_theme(self):
         if self.theme == "light":
             self.theme = "dark"
@@ -236,6 +272,7 @@ class BudgetApplication(ctk.CTk):
         self.remaining_days = duration
         self.total_bars = duration
         self.data = [1] * self.total_bars
+        self.costs = [0] * self.total_bars
         self.draw_bars()
         self.show_error(f"Budget set for {duration} days. {self.total_bars} bars displayed.")
 
@@ -278,6 +315,7 @@ class BudgetApplication(ctk.CTk):
         else:
             self.currency_flag = 2
         self.draw_bars()
+
     def graph(self, first_day, last_day):
         # Validate input for first_day and last_day
         try:
@@ -315,6 +353,7 @@ class BudgetApplication(ctk.CTk):
 
         # Clear the trend line data after displaying the plot
         self.trend_data = None
+
 
 if __name__ == "__main__":
     app = BudgetApplication()
