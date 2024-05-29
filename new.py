@@ -146,7 +146,16 @@ class BudgetApplication(ctk.CTk):
             return
 
         self.costs[bar_number] = value
+        self.check_budget_exceedance(bar_number)
         self.draw_bars()
+
+    def check_budget_exceedance(self, updated_day):
+        cumulative_budget_minus_costs = 0
+        for day in range(updated_day + 1):
+            cumulative_budget_minus_costs += self.data[day] - self.costs[day]
+
+        if cumulative_budget_minus_costs < 0:
+            self.show_error(f"Warning: Budget exceeded on day {updated_day + 1}!")
 
     def show_error(self, message):
         self.error_label.configure(text=message)
